@@ -1,0 +1,41 @@
+{
+  "name": "cron",
+  "displayName": "Cron Scheduler",
+  "version": "0.1.0",
+  "description": "Schedule recurring tasks with cron expressions — run shell commands, HTTP requests, or AI agent jobs on a timer with full audit history",
+  "main": "main.js",
+  "renderer": "renderer.js",
+  "permissions": [
+    "config:read",
+    "config:write",
+    "state:publish",
+    "tools:register",
+    "ui:panel",
+    "ui:navigation",
+    "ui:settings",
+    "notifications:send",
+    "agent:backend"
+  ],
+  "priority": 40,
+  "required": false,
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "jobs": {
+        "type": "object",
+        "description": "Cron job definitions keyed by ID"
+      },
+      "defaults": {
+        "type": "object",
+        "properties": {
+          "modelOverride": { "type": "string" },
+          "profileOverride": { "type": "string" },
+          "fallbackEnabled": { "type": "boolean" },
+          "reasoningEffort": { "type": "string" },
+          "maxHistoryRetention": { "type": "number", "default": 100 },
+          "commandTimeoutMs": { "type": "number", "default": 60000 }
+        }
+      }
+    }
+  }
+}
