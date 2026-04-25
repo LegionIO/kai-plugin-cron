@@ -1,6 +1,7 @@
 {
   "name": "kai-plugin-cron",
   "version": "0.1.4",
+  "author": "Kyle Boyer <https://github.com/KyleBoyer>",
   "private": true,
   "type": "module",
   "scripts": {
