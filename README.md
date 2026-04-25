@@ -1,145 +1,89 @@
-# Cron Scheduler Plugin for Kai Desktop
+# Kai Plugin — Cron Scheduler
 
-Schedule recurring tasks with cron expressions in [Kai Desktop](https://github.com/kai-systems/kai-desktop) — run shell commands, HTTP requests, or AI agent jobs on a timer with full audit history.
+Schedule recurring tasks with cron expressions in [Kai](https://github.com/LegionIO/kai-desktop). Run shell commands, HTTP requests, or AI agent jobs on a timer with a full audit trail.
 
 ## Features
 
-- **Dock Icon & Management Panel** — Clock icon in the sidebar opens a full-page panel for managing all cron jobs
-- **Two Job Types:**
-  - **Command** — Execute shell commands or HTTP requests on a schedule
-  - **AI Agent** — Kick off an AI task with a prompt, system prompt, and full tool access (e.g. "collect the news and send me a summary email")
-- **Full Audit Trail** — Every run is recorded with timestamps, duration, and complete output:
-  - Shell jobs: stdout, stderr, exit code
-  - HTTP jobs: status code, response body, request headers
-  - AI jobs: full message transcript, every tool call with args/results/timing, model used
-- **AI Tools for CRUD** — The main Kai AI agent can create, list, update, delete, run, stop, and query history for cron jobs via tool calls
-- **Missed Run Detection** — If the app was closed when a job was due, it's marked as `skipped` with a notification on next launch
-- **Job Kill Support** — Stop any running job (shell, HTTP, or AI) mid-execution from the UI or via AI tool
-- **Per-Job Model/Profile Overrides** — Configure model, profile, auto/manual routing, and thinking level at the plugin default level or per individual cron job
-- **Cron Expression Display** — Human-readable descriptions of cron schedules (e.g. `0 9 * * 1-5` shows "At 9:00 AM, on weekdays")
-- **Timezone Support** — Per-job timezone selection from a comprehensive list of IANA timezones
-- **Notifications** — Native macOS and in-app notifications on job completion or failure
-- **History Rotation** — Automatic pruning of old run records per configurable retention limit
-- **Concurrent Execution Guard** — Prevents the same job from running twice simultaneously
-
-## Prerequisites
-
-- [Kai Desktop](https://github.com/kai-systems/kai-desktop) installed and running
+- **Two job types** — Command (shell / HTTP) and AI Agent (prompt + full tool access)
+- **Full audit trail** — Every run is recorded with timestamps, duration, stdout/stderr, HTTP responses, or AI transcripts with tool call traces
+- **AI tools** — Claude can create, list, update, delete, run, stop, and query history for cron jobs
+- **Missed run detection** — Jobs skipped while Kai was closed are marked with a notification on next launch
+- **Job kill support** — Stop any running job mid-execution from the UI or via AI tool
+- **Per-job overrides** — Model, profile, reasoning effort, and fallback per job
+- **Timezone support** — Per-job IANA timezone selection
+- **Notifications** — Native and in-app notifications on completion or failure
+- **History rotation** — Configurable retention limit with automatic pruning
+- **Concurrency guard** — Prevents the same job from running twice simultaneously
 
 ## Installation
 
-1. **Clone this repo** into your plugins directory:
+Install from the Kai marketplace, or manually:
 
-   ```bash
-   cd ~/.kai/plugins
-   git clone https://github.com/kai-systems/kai-plugin-cron.git cron
-   ```
+```bash
+cd ~/.kai/plugins
+git clone https://github.com/LegionIO/kai-plugin-cron.git cron
+cd cron
+npm install
+npm run build
+```
 
-   Or clone elsewhere and symlink:
-
-   ```bash
-   git clone https://github.com/kai-systems/kai-plugin-cron.git ~/git/kai-plugin-cron
-   ln -sf ~/git/kai-plugin-cron ~/.kai/plugins/cron
-   ```
-
-2. **Install dependencies and build:**
-
-   ```bash
-   cd ~/.kai/plugins/cron
-   npm install
-   npm run build
-   ```
-
-3. **Restart Kai Desktop** — The plugin will be discovered automatically. Approve it when prompted.
-
-4. **Create your first job** — Click the clock icon in the dock, then click "+ New Job".
-
-## Configuration
-
-### Plugin Settings
-
-Access via Settings > Cron Scheduler:
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Default Model | Model for AI cron jobs | Kai default |
-| Default Profile | Profile for AI cron jobs | None |
-| Auto/Manual Routing | Fallback model routing mode | Manual |
-| Thinking Level | Reasoning effort (low/medium/high/xhigh) | Default |
-| Max Records Per Job | Run history retention limit | 100 |
-| Command Timeout | Default timeout for shell/HTTP jobs | 60000 ms |
-
-### Per-Job AI Overrides
-
-When creating or editing an AI cron job, you can override the plugin defaults for model, profile, auto/manual routing, and thinking level. Per-job settings take priority over plugin defaults.
-
-### Model/Profile Selector Behavior
-
-- Selecting a non-default profile automatically enables Auto mode and sets the model to that profile's primary model
-- Selecting the default profile disables Auto mode
-- Auto mode can still be toggled manually
-- When Auto mode is ON, the model dropdown is locked to the profile's primary model
-- When Auto mode is OFF, the model dropdown is freely selectable
-
-## AI Tools
-
-The plugin registers these tools that Kai's AI agent can call directly in conversation:
-
-| Tool | Description |
-|------|-------------|
-| `create-cron` | Create a new cron job (command or AI type) |
-| `list-crons` | List all configured cron jobs with status |
-| `get-cron` | Get full details of a specific job |
-| `update-cron` | Update an existing job's configuration |
-| `delete-cron` | Delete a job and its history |
-| `get-cron-history` | Query run history with optional filters |
-| `run-cron-now` | Immediately execute a job |
-| `stop-cron` | Kill a currently running job |
-
-**Example:** Ask Kai _"Create a cron job that runs every weekday at 9am and summarizes the top tech news"_ and it will use the `create-cron` tool to set it up.
+Restart Kai — the plugin is discovered automatically.
 
 ## Development
 
 ```bash
-# Watch for changes and rebuild
-npm run watch
-
-# After changes, restart Kai Desktop to reload the plugin
-# The renderer cache may need clearing:
-rm -rf ~/.kai/plugin-renderers/cron
+npm install
+npm run dev   # builds to ~/.kai/plugins/cron/ and watches for changes
 ```
 
-### Project Structure
+Restart Kai after each rebuild to reload the plugin.
+
+```bash
+npm run build  # production build → dist/
+```
+
+## Project Structure
 
 ```
-plugin.json              # Plugin manifest
-main.ts                  # Main process entry point (activate/deactivate)
-renderer.js              # Renderer entry (bundled by Kai's esbuild)
 src/
-  shared/
-    types.ts             # All TypeScript types
-    constants.ts         # IDs, icons, defaults
-  main/
-    executor.ts          # Job execution (shell, HTTP, AI) with abort support
-    scheduler.ts         # Timer-based cron engine with missed-run detection
-    storage.ts           # Job persistence (config) + history (JSON file)
-    tools.ts             # AI tool definitions (CRUD + run + stop + history)
-  renderer/
-    hooks.ts             # React hooks (from host)
-    components/
-      CronPanel.tsx      # Main panel (list/detail/create/edit views)
-      CronSettings.tsx   # Plugin settings page
-      JobList.tsx        # Job list with status, next run, actions
-      JobForm.tsx        # Create/edit form with model/profile selectors
-      JobDetail.tsx      # Job detail view with run history
-      RunHistory.tsx     # Expandable run history with full audit details
-      ModelProfileSelectors.tsx  # Model/profile/auto-manual/thinking dropdowns
-      cronDisplay.ts     # Cron expression to human-readable text
+├── backend/
+│   ├── index.ts       # activate / deactivate
+│   ├── executor.ts    # Job execution (shell, HTTP, AI) with abort
+│   ├── scheduler.ts   # Timer-based cron engine with missed-run detection
+│   ├── storage.ts     # Job persistence and run history
+│   └── tools.ts       # AI tool definitions
+├── frontend/
+│   ├── index.ts       # Component registration
+│   ├── hooks.ts       # Shared prop types
+│   └── components/
+│       ├── CronPanel.tsx
+│       ├── CronSettings.tsx
+│       ├── JobList.tsx
+│       ├── JobForm.tsx
+│       ├── JobDetail.tsx
+│       ├── RunHistory.tsx
+│       └── ModelProfileSelectors.tsx
+└── shared/
+    ├── types.ts
+    └── constants.ts
 ```
 
-## Kai Desktop Framework Changes
+## AI Tools
 
-This plugin uses the `abortSignal` option on `api.agent.generate()` for killing in-progress AI cron jobs. This requires Kai Desktop with the abort signal threading through `PluginAgentGenerateOptions` → `generateForPlugin` → `streamAgentResponse`.
+| Tool | Description |
+|------|-------------|
+| `create-cron` | Create a new cron job |
+| `list-crons` | List all configured jobs |
+| `get-cron` | Get details of a specific job |
+| `update-cron` | Update a job's configuration |
+| `delete-cron` | Delete a job and its history |
+| `get-cron-history` | Query run history |
+| `run-cron-now` | Immediately execute a job |
+| `stop-cron` | Kill a running job |
+
+## Release
+
+Releases are automated via GitHub Actions. Go to **Actions → Release Plugin → Run workflow**, choose a version bump, and the workflow will build and publish a release with the plugin tarball.
 
 ## License
 
