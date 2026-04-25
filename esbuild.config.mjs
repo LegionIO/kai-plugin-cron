@@ -40,7 +40,7 @@ const localNodeModulesPlugin = {
 };
 
 const buildOptions = {
-  entryPoints: ['./src/backend.ts'],
+  entryPoints: ['./src/backend/index.ts'],
   bundle: true,
   platform: 'node',
   format: 'esm',

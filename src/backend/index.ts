@@ -1,9 +1,9 @@
-import { CronStorage } from './main/storage.js';
-import { CronScheduler } from './main/scheduler.js';
-import { CronExecutor } from './main/executor.js';
-import { buildCronTools } from './main/tools.js';
-import { PANEL_ID, NAV_ID, SETTINGS_ID, CLOCK_ICON_SVG } from './shared/constants.js';
-import type { CronJob, CronDefaults, PluginAPI } from './shared/types.js';
+import { CronStorage } from './storage.js';
+import { CronScheduler } from './scheduler.js';
+import { CronExecutor } from './executor.js';
+import { buildCronTools } from './tools.js';
+import { PANEL_ID, NAV_ID, SETTINGS_ID, CLOCK_ICON_SVG } from '../shared/constants.js';
+import type { CronJob, CronDefaults, PluginAPI } from '../shared/types.js';
 
 let storage: CronStorage | null = null;
 let scheduler: CronScheduler | null = null;
