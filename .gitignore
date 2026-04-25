@@ -1,7 +1,7 @@
 node_modules/
 *.js
-!renderer.js
+!frontend.js
 src/**/*.js
 history.json
-main.js
-main.js.map
+backend.js
+backend.js.map

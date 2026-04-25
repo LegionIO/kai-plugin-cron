@@ -43,7 +43,7 @@ const buildOptions = {
   bundle: true,
   platform: 'node',
   format: 'esm',
-  outfile: './main.js',
+  outfile: './backend.js',
   external: [], // Bundle everything, including cron-parser
   sourcemap: true,
   target: 'node18',
