@@ -1,0 +1,7 @@
+node_modules/
+*.js
+!renderer.js
+src/**/*.js
+history.json
+main.js
+main.js.map
