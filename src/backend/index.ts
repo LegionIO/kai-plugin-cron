@@ -2,7 +2,7 @@ import { CronStorage } from './storage.js';
 import { CronScheduler } from './scheduler.js';
 import { CronExecutor } from './executor.js';
 import { buildCronTools } from './tools.js';
-import { PANEL_ID, NAV_ID, SETTINGS_ID, CLOCK_ICON_SVG } from '../shared/constants.js';
+import { PANEL_ID, NAV_ID, SETTINGS_ID } from '../shared/constants.js';
 import type { CronJob, CronDefaults, PluginAPI } from '../shared/types.js';
 
 let storage: CronStorage | null = null;
@@ -28,7 +28,7 @@ function publishState(api: PluginAPI): void {
   api.ui.registerNavigationItem({
     id: NAV_ID,
     label: 'Cron',
-    icon: { svg: CLOCK_ICON_SVG },
+    icon: { lucide: 'clock' },
     visible: true,
     priority: 40,
     badge: runningJobs.length > 0 ? runningJobs.length : undefined,
@@ -221,7 +221,7 @@ export async function activate(api: PluginAPI): Promise<void> {
   api.ui.registerNavigationItem({
     id: NAV_ID,
     label: 'Cron',
-    icon: { svg: CLOCK_ICON_SVG },
+    icon: { lucide: 'clock' },
     visible: true,
     priority: 40,
     target: { type: 'panel', panelId: PANEL_ID },
