@@ -2,6 +2,7 @@ import esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { createRequire } from 'module';
+import { copyFileSync, mkdirSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -39,16 +40,19 @@ const localNodeModulesPlugin = {
 };
 
 const buildOptions = {
-  entryPoints: ['./main.ts'],
+  entryPoints: ['./src/backend.ts'],
   bundle: true,
   platform: 'node',
   format: 'esm',
-  outfile: './backend.js',
+  outfile: './dist/backend.js',
   external: [], // Bundle everything, including cron-parser
   sourcemap: true,
   target: 'node18',
   plugins: [localNodeModulesPlugin],
 };
+
+// Ensure dist directory exists
+mkdirSync(resolve(__dirname, 'dist'), { recursive: true });
 
 if (isWatch) {
   const ctx = await esbuild.context(buildOptions);
@@ -56,4 +60,11 @@ if (isWatch) {
   console.log('Watching for changes...');
 } else {
   await esbuild.build(buildOptions).catch(() => process.exit(1));
+
+  // Copy frontend to dist
+  copyFileSync(
+    resolve(__dirname, 'src/frontend/index.js'),
+    resolve(__dirname, 'dist/frontend.js')
+  );
+  console.log('Built backend.js and copied frontend.js to dist/');
 }

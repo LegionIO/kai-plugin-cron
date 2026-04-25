@@ -3,8 +3,6 @@
   "displayName": "Cron Scheduler",
   "version": "0.1.3",
   "description": "Schedule recurring tasks with cron expressions — run shell commands, HTTP requests, or AI agent jobs on a timer with full audit history",
-  "main": "backend.js",
-  "renderer": "frontend.js",
   "permissions": [
     "config:read",
     "config:write",

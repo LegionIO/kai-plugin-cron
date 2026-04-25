@@ -1,7 +1,3 @@
 node_modules/
-*.js
-!frontend.js
-src/**/*.js
+dist/
 history.json
-backend.js
-backend.js.map
