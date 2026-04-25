@@ -30,7 +30,7 @@ function SettingsField({ label, description, children }: { label: string; descri
   );
 }
 
-export function CronSettings({ onAction, pluginConfig, pluginState }: PluginComponentProps) {
+export function SettingsView({ onAction, pluginConfig, pluginState }: PluginComponentProps) {
   const defaults = ((pluginConfig as any)?.defaults ?? {}) as Record<string, unknown>;
   const state = (pluginState ?? {}) as any;
   const jobCount = (state.jobs ?? []).length;

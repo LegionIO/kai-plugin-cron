@@ -210,9 +210,8 @@ export async function activate(api: PluginAPI): Promise<void> {
   });
 
   // Register UI
-  api.ui.registerPanel({
+  api.ui.registerPanelView({
     id: PANEL_ID,
-    component: 'CronPanel',
     title: 'Cron Scheduler',
     visible: true,
     width: 'full',
@@ -227,16 +226,15 @@ export async function activate(api: PluginAPI): Promise<void> {
     target: { type: 'panel', panelId: PANEL_ID },
   });
 
-  api.ui.registerSettingsSection({
+  api.ui.registerSettingsView({
     id: SETTINGS_ID,
     label: 'Cron Scheduler',
-    component: 'CronSettings',
     priority: 40,
   });
 
   // Register action handlers
   api.onAction(`panel:${PANEL_ID}`, (action, data) => handlePanelAction(api, action, data));
-  api.onAction(`settings:CronSettings`, (action, data) => handleSettingsAction(api, action, data));
+  api.onAction(`settings:${SETTINGS_ID}`, (action, data) => handleSettingsAction(api, action, data));
 
   // Register AI tools
   const tools = buildCronTools({

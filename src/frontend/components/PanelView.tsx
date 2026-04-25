@@ -19,7 +19,7 @@ type PluginComponentProps = {
 
 type View = { type: 'list' } | { type: 'create' } | { type: 'edit'; jobId: string } | { type: 'detail'; jobId: string };
 
-export function CronPanel({ onAction, pluginState }: PluginComponentProps) {
+export function PanelView({ onAction, pluginState }: PluginComponentProps) {
   const state = (pluginState ?? {}) as any;
   const jobs = (state.jobs ?? []) as any[];
   const recentRuns = (state.recentRuns ?? []) as any[];
