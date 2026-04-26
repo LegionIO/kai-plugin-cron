@@ -4,6 +4,7 @@
   "version": "0.1.7",
   "description": "Schedule recurring tasks with cron expressions — run shell commands, HTTP requests, or AI agent jobs on a timer with full audit history",
   "author": "Kyle Boyer",
+  "authorGithub": "KyleBoyer",
   "permissions": [
     "config:read",
     "config:write",
