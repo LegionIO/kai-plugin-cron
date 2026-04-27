@@ -3,6 +3,7 @@
   "displayName": "Cron Scheduler",
   "version": "0.1.9",
   "description": "Schedule recurring tasks with cron expressions — run shell commands, HTTP requests, or AI agent jobs on a timer with full audit history",
+  "icon": { "lucide": "clock" },
   "author": "Kyle Boyer <https://github.com/KyleBoyer>",
   "permissions": [
     "config:read",

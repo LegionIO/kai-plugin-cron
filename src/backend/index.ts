@@ -27,8 +27,6 @@ function publishState(api: PluginAPI): void {
 
   api.ui.registerNavigationItem({
     id: NAV_ID,
-    label: 'Cron Scheduler',
-    icon: { lucide: 'clock' },
     visible: true,
     priority: 40,
     badge: runningJobs.length > 0 ? runningJobs.length : undefined,
@@ -219,8 +217,6 @@ export async function activate(api: PluginAPI): Promise<void> {
 
   api.ui.registerNavigationItem({
     id: NAV_ID,
-    label: 'Cron Scheduler',
-    icon: { lucide: 'clock' },
     visible: true,
     priority: 40,
     target: { type: 'panel', panelId: PANEL_ID },
