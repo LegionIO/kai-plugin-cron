@@ -16,8 +16,6 @@
     "notifications:send",
     "agent:backend"
   ],
-  "priority": 40,
-  "required": false,
   "configSchema": {
     "type": "object",
     "properties": {
