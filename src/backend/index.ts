@@ -27,7 +27,7 @@ function publishState(api: PluginAPI): void {
 
   api.ui.registerNavigationItem({
     id: NAV_ID,
-    label: 'Cron',
+    label: 'Cron Scheduler',
     icon: { lucide: 'clock' },
     visible: true,
     priority: 40,
@@ -219,7 +219,7 @@ export async function activate(api: PluginAPI): Promise<void> {
 
   api.ui.registerNavigationItem({
     id: NAV_ID,
-    label: 'Cron',
+    label: 'Cron Scheduler',
     icon: { lucide: 'clock' },
     visible: true,
     priority: 40,
