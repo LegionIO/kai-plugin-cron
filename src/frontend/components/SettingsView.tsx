@@ -1,34 +1,6 @@
-import { useState, useCallback } from '../hooks';
+import React, { useState, useCallback } from 'react';
+import type { PluginComponentProps } from '../hooks.ts';
 import { ModelProfileBar } from './ModelProfileSelectors';
-
-const h = (...args: any[]) => (globalThis as any).React.createElement(...args);
-
-type PluginComponentProps = {
-  pluginName: string;
-  props?: Record<string, unknown>;
-  onAction: (action: string, data?: unknown) => void;
-  onClose?: () => void;
-  config?: Record<string, unknown>;
-  updateConfig?: (path: string, value: unknown) => Promise<void>;
-  pluginConfig?: Record<string, unknown>;
-  pluginState?: Record<string, unknown>;
-  setPluginConfig?: (path: string, value: unknown) => Promise<void>;
-};
-
-function SettingsSection({ title, children }: { title: string; children: any }) {
-  return h('div', { className: 'space-y-4' },
-    h('h3', { className: 'text-sm font-semibold border-b border-border/50 pb-2' }, title),
-    children,
-  );
-}
-
-function SettingsField({ label, description, children }: { label: string; description?: string; children: any }) {
-  return h('div', { className: 'space-y-1.5' },
-    h('label', { className: 'text-sm font-medium' }, label),
-    description ? h('p', { className: 'text-xs text-muted-foreground' }, description) : null,
-    children,
-  );
-}
 
 export function SettingsView({ onAction, pluginConfig, pluginState }: PluginComponentProps) {
   const defaults = ((pluginConfig as any)?.defaults ?? {}) as Record<string, unknown>;
@@ -50,63 +22,67 @@ export function SettingsView({ onAction, pluginConfig, pluginState }: PluginComp
     onAction('save-defaults', next);
   }, [localDefaults, onAction]);
 
-  const inputClass = 'w-full rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-sm placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none';
+  const inputClass = 'w-full rounded-xl border border-border/70 bg-card/80 px-2.5 py-1.5 text-xs';
 
-  return h('div', { className: 'space-y-8' },
-    // Status
-    h(SettingsSection, { title: 'Status' },
-      h('div', { className: 'grid grid-cols-2 gap-x-4 gap-y-1 text-sm' },
-        h('span', { className: 'text-muted-foreground' }, 'Total Jobs:'),
-        h('span', null, String(jobCount)),
-        h('span', { className: 'text-muted-foreground' }, 'Enabled:'),
-        h('span', null, String(enabledCount)),
-      ),
-    ),
+  return (
+    <div className="space-y-6">
+      {/* Status */}
+      <fieldset className="space-y-3 rounded-lg border border-border/50 p-3">
+        <legend className="px-1 text-[10px] font-medium text-muted-foreground">Status</legend>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+          <span className="text-muted-foreground">Total Jobs:</span>
+          <span>{String(jobCount)}</span>
+          <span className="text-muted-foreground">Enabled:</span>
+          <span>{String(enabledCount)}</span>
+        </div>
+      </fieldset>
 
-    // Default AI settings
-    h(SettingsSection, { title: 'Default AI Settings' },
-      h('p', { className: 'text-xs text-muted-foreground' },
-        'These defaults apply to all AI cron jobs unless overridden per-job.',
-      ),
-      h(ModelProfileBar, {
-        modelOverride: localDefaults.modelOverride as string,
-        profileOverride: localDefaults.profileOverride as string,
-        fallbackEnabled: localDefaults.fallbackEnabled as boolean,
-        reasoningEffort: localDefaults.reasoningEffort as string,
-        onChange: handleModelProfileChange,
-      }),
-    ),
+      {/* Default AI settings */}
+      <fieldset className="space-y-3 rounded-lg border border-border/50 p-3">
+        <legend className="px-1 text-[10px] font-medium text-muted-foreground">Default AI Settings</legend>
+        <p className="text-xs text-muted-foreground">
+          These defaults apply to all AI cron jobs unless overridden per-job.
+        </p>
+        <ModelProfileBar
+          modelOverride={localDefaults.modelOverride as string}
+          profileOverride={localDefaults.profileOverride as string}
+          fallbackEnabled={localDefaults.fallbackEnabled as boolean}
+          reasoningEffort={localDefaults.reasoningEffort as string}
+          onChange={handleModelProfileChange}
+        />
+      </fieldset>
 
-    // History retention
-    h(SettingsSection, { title: 'History' },
-      h(SettingsField, {
-        label: 'Max Records Per Job',
-        description: 'Number of run records to keep per job before pruning old ones',
-      },
-        h('input', {
-          type: 'number',
-          value: localDefaults.maxHistoryRetention ?? 100,
-          onChange: (e: any) => updateDefault('maxHistoryRetention', parseInt(e.target.value, 10) || 100),
-          className: inputClass,
-          style: { maxWidth: '120px' },
-        }),
-      ),
-    ),
+      {/* History retention */}
+      <fieldset className="space-y-3 rounded-lg border border-border/50 p-3">
+        <legend className="px-1 text-[10px] font-medium text-muted-foreground">History</legend>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Max Records Per Job</label>
+          <p className="text-xs text-muted-foreground">Number of run records to keep per job before pruning old ones</p>
+          <input
+            type="number"
+            value={localDefaults.maxHistoryRetention ?? 100}
+            onChange={(e: any) => updateDefault('maxHistoryRetention', parseInt(e.target.value, 10) || 100)}
+            className={inputClass}
+            style={{ maxWidth: '120px' }}
+          />
+        </div>
+      </fieldset>
 
-    // Default timeouts
-    h(SettingsSection, { title: 'Defaults' },
-      h(SettingsField, {
-        label: 'Command Timeout (ms)',
-        description: 'Default timeout for shell commands and HTTP requests',
-      },
-        h('input', {
-          type: 'number',
-          value: localDefaults.commandTimeoutMs ?? 60000,
-          onChange: (e: any) => updateDefault('commandTimeoutMs', parseInt(e.target.value, 10) || 60000),
-          className: inputClass,
-          style: { maxWidth: '120px' },
-        }),
-      ),
-    ),
+      {/* Default timeouts */}
+      <fieldset className="space-y-3 rounded-lg border border-border/50 p-3">
+        <legend className="px-1 text-[10px] font-medium text-muted-foreground">Defaults</legend>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Command Timeout (ms)</label>
+          <p className="text-xs text-muted-foreground">Default timeout for shell commands and HTTP requests</p>
+          <input
+            type="number"
+            value={localDefaults.commandTimeoutMs ?? 60000}
+            onChange={(e: any) => updateDefault('commandTimeoutMs', parseInt(e.target.value, 10) || 60000)}
+            className={inputClass}
+            style={{ maxWidth: '120px' }}
+          />
+        </div>
+      </fieldset>
+    </div>
   );
 }

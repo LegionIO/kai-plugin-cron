@@ -1,7 +1,5 @@
-import { useState, useCallback } from '../hooks';
+import React, { useState } from 'react';
 import { cronToHuman } from './cronDisplay';
-
-const h = (...args: any[]) => (globalThis as any).React.createElement(...args);
 
 type JobListProps = {
   jobs: any[];
@@ -30,17 +28,19 @@ function statusDot(status: string | null) {
     running: '#3b82f6',
   };
   const color = status ? colors[status] ?? '#6b7280' : '#6b7280';
-  return h('span', {
-    title: status ?? 'No runs yet',
-    style: {
-      display: 'inline-block',
-      width: '8px',
-      height: '8px',
-      borderRadius: '50%',
-      backgroundColor: color,
-      flexShrink: 0,
-    },
-  });
+  return (
+    <span
+      title={status ?? 'No runs yet'}
+      style={{
+        display: 'inline-block',
+        width: '8px',
+        height: '8px',
+        borderRadius: '50%',
+        backgroundColor: color,
+        flexShrink: 0,
+      }}
+    />
+  );
 }
 
 function relativeTime(isoDate: string): string {
@@ -63,102 +63,126 @@ export function JobList({ jobs, nextRuns, runningJobs, recentRuns, onSelect, onT
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   if (jobs.length === 0) {
-    return h('div', { className: 'flex flex-col items-center justify-center py-20 text-muted-foreground' },
-      h('div', { style: { fontSize: '48px', opacity: 0.3, marginBottom: '12px' } }, '\u23F0'),
-      h('p', { className: 'text-sm' }, 'No cron jobs configured yet'),
-      h('p', { className: 'text-xs mt-1 opacity-60' }, 'Click "+ New Job" to create one'),
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <div style={{ fontSize: '48px', opacity: 0.3, marginBottom: '12px' }}>⏰</div>
+        <p className="text-sm">No cron jobs configured yet</p>
+        <p className="text-xs mt-1 opacity-60">Click "+ New Job" to create one</p>
+      </div>
     );
   }
 
-  return h('div', { className: 'divide-y divide-border/30' },
-    jobs.map((job: any) => {
-      const isRunning = runningJobs.includes(job.id);
-      const lastStatus = isRunning ? 'running' : getLastStatus(recentRuns, job.id);
-      const nextRun = nextRuns[job.id];
+  return (
+    <div className="divide-y divide-border/30">
+      {jobs.map((job: any) => {
+        const isRunning = runningJobs.includes(job.id);
+        const lastStatus = isRunning ? 'running' : getLastStatus(recentRuns, job.id);
+        const nextRun = nextRuns[job.id];
 
-      return h('div', {
-        key: job.id,
-        className: 'flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer',
-        onClick: () => onSelect(job.id),
-      },
-        // Status dot
-        statusDot(lastStatus),
+        return (
+          <div
+            key={job.id}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+            onClick={() => onSelect(job.id)}
+          >
+            {/* Status dot */}
+            {statusDot(lastStatus)}
 
-        // Job info
-        h('div', { className: 'flex-1 min-w-0' },
-          h('div', { className: 'flex items-center gap-2' },
-            h('span', { className: 'text-sm font-medium truncate' }, job.name),
-            h('span', {
-              className: 'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-              style: {
-                backgroundColor: job.type === 'ai' ? 'rgba(147,51,234,0.15)' : 'rgba(59,130,246,0.15)',
-                color: job.type === 'ai' ? 'rgb(147,51,234)' : 'rgb(59,130,246)',
-              },
-            }, job.type === 'ai' ? 'AI' : 'CMD'),
-          ),
-          h('div', { className: 'text-xs text-muted-foreground mt-0.5' },
-            cronToHuman(job.schedule),
-            nextRun && job.enabled
-              ? h('span', { className: 'ml-2 opacity-60' }, `\u2022 ${relativeTime(nextRun)}`)
-              : null,
-          ),
-        ),
+            {/* Job info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">{job.name}</span>
+                <span
+                  className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                  style={{
+                    backgroundColor: job.type === 'ai' ? 'rgba(147,51,234,0.15)' : 'rgba(59,130,246,0.15)',
+                    color: job.type === 'ai' ? 'rgb(147,51,234)' : 'rgb(59,130,246)',
+                  }}
+                >
+                  {job.type === 'ai' ? 'AI' : 'CMD'}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {cronToHuman(job.schedule)}
+                {nextRun && job.enabled ? (
+                  <span className="ml-2 opacity-60">{`• ${relativeTime(nextRun)}`}</span>
+                ) : null}
+              </div>
+            </div>
 
-        // Actions (stop propagation to prevent selecting the job)
-        h('div', {
-          className: 'flex items-center gap-1',
-          onClick: (e: any) => e.stopPropagation(),
-        },
-          // Enable/disable toggle
-          h('button', {
-            type: 'button',
-            onClick: () => onToggle(job.id),
-            title: job.enabled ? 'Disable' : 'Enable',
-            className: `rounded-lg px-2 py-1 text-xs transition-colors ${
-              job.enabled
-                ? 'text-green-500 hover:bg-green-500/10'
-                : 'text-muted-foreground/50 hover:bg-muted/50'
-            }`,
-          }, job.enabled ? 'ON' : 'OFF'),
+            {/* Actions (stop propagation to prevent selecting the job) */}
+            <div
+              className="flex items-center gap-1"
+              onClick={(e: any) => e.stopPropagation()}
+            >
+              {/* Enable/disable toggle */}
+              <button
+                type="button"
+                onClick={() => onToggle(job.id)}
+                title={job.enabled ? 'Disable' : 'Enable'}
+                className={`rounded-lg px-2 py-1 text-xs transition-colors ${
+                  job.enabled
+                    ? 'text-green-500 hover:bg-green-500/10'
+                    : 'text-muted-foreground/50 hover:bg-muted/50'
+                }`}
+              >
+                {job.enabled ? 'ON' : 'OFF'}
+              </button>
 
-          // Run Now / Stop
-          isRunning
-            ? h('button', {
-                type: 'button',
-                onClick: () => onStop(job.id),
-                title: 'Stop running job',
-                className: 'rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10 transition-colors',
-              }, '\u25A0')
-            : h('button', {
-                type: 'button',
-                onClick: () => onRunNow(job.id),
-                title: 'Run now',
-                className: 'rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors',
-              }, '\u25B6'),
+              {/* Run Now / Stop */}
+              {isRunning ? (
+                <button
+                  type="button"
+                  onClick={() => onStop(job.id)}
+                  title="Stop running job"
+                  className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  ■
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onRunNow(job.id)}
+                  title="Run now"
+                  className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                >
+                  ▶
+                </button>
+              )}
 
-          // Edit
-          h('button', {
-            type: 'button',
-            onClick: () => onEdit(job.id),
-            title: 'Edit',
-            className: 'rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors',
-          }, '\u270E'),
+              {/* Edit */}
+              <button
+                type="button"
+                onClick={() => onEdit(job.id)}
+                title="Edit"
+                className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+              >
+                ✎
+              </button>
 
-          // Delete
-          confirmDelete === job.id
-            ? h('button', {
-                type: 'button',
-                onClick: () => { onDelete(job.id); setConfirmDelete(null); },
-                className: 'rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10 font-medium',
-              }, 'Confirm?')
-            : h('button', {
-                type: 'button',
-                onClick: () => setConfirmDelete(job.id),
-                title: 'Delete',
-                className: 'rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors',
-              }, '\u2715'),
-        ),
-      );
-    }),
+              {/* Delete */}
+              {confirmDelete === job.id ? (
+                <button
+                  type="button"
+                  onClick={() => { onDelete(job.id); setConfirmDelete(null); }}
+                  className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10 font-medium"
+                >
+                  Confirm?
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(job.id)}
+                  title="Delete"
+                  className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
