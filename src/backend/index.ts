@@ -28,7 +28,6 @@ function publishState(api: PluginAPI): void {
   api.ui.registerNavigationItem({
     id: NAV_ID,
     visible: true,
-    priority: 40,
     badge: runningJobs.length > 0 ? runningJobs.length : undefined,
     target: { type: 'panel', panelId: PANEL_ID },
   });
@@ -218,14 +217,12 @@ export async function activate(api: PluginAPI): Promise<void> {
   api.ui.registerNavigationItem({
     id: NAV_ID,
     visible: true,
-    priority: 40,
     target: { type: 'panel', panelId: PANEL_ID },
   });
 
   api.ui.registerSettingsView({
     id: SETTINGS_ID,
     label: 'Cron Scheduler',
-    priority: 40,
   });
 
   // Register action handlers
