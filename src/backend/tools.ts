@@ -25,7 +25,7 @@ export function buildCronTools(deps: Deps) {
 
   return [
     {
-      name: 'create-cron',
+      name: 'create',
       description: 'Create a new scheduled cron job. Supports two types: "command" (shell command or HTTP request) and "ai" (AI agent task with a prompt). Returns the created job.',
       inputSchema: {
         type: 'object',
@@ -108,7 +108,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'list-crons',
+      name: 'list',
       description: 'List all configured cron jobs with their current status and next run time.',
       inputSchema: {
         type: 'object',
@@ -137,7 +137,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'get-cron',
+      name: 'get',
       description: 'Get full details of a specific cron job including its configuration.',
       inputSchema: {
         type: 'object',
@@ -159,7 +159,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'update-cron',
+      name: 'update',
       description: 'Update an existing cron job. Only provided fields are updated.',
       inputSchema: {
         type: 'object',
@@ -207,7 +207,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'delete-cron',
+      name: 'delete',
       description: 'Delete a cron job and all its run history.',
       inputSchema: {
         type: 'object',
@@ -231,7 +231,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'get-cron-history',
+      name: 'get_history',
       description: 'Get run history for a cron job or all jobs. Returns most recent runs first.',
       inputSchema: {
         type: 'object',
@@ -269,7 +269,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'run-cron-now',
+      name: 'run_now',
       description: 'Immediately execute a cron job (does not affect its schedule). Returns the run result.',
       inputSchema: {
         type: 'object',
@@ -299,7 +299,7 @@ export function buildCronTools(deps: Deps) {
     },
 
     {
-      name: 'stop-cron',
+      name: 'stop',
       description: 'Stop/kill a currently running cron job.',
       inputSchema: {
         type: 'object',

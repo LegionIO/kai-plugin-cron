@@ -72,14 +72,14 @@ src/
 
 | Tool | Description |
 |------|-------------|
-| `create-cron` | Create a new cron job |
-| `list-crons` | List all configured jobs |
-| `get-cron` | Get details of a specific job |
-| `update-cron` | Update a job's configuration |
-| `delete-cron` | Delete a job and its history |
-| `get-cron-history` | Query run history |
-| `run-cron-now` | Immediately execute a job |
-| `stop-cron` | Kill a running job |
+| `create` | Create a new cron job |
+| `list` | List all configured jobs |
+| `get` | Get details of a specific job |
+| `update` | Update a job's configuration |
+| `delete` | Delete a job and its history |
+| `get_history` | Query run history |
+| `run_now` | Immediately execute a job |
+| `stop` | Kill a running job |
 
 ## Release
 
