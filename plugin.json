@@ -8,6 +8,7 @@
   },
   "author": "Kyle Boyer <https://github.com/KyleBoyer>",
   "permissions": [
+    "agent:generate",
     "config:read",
     "config:write",
     "state:publish",
