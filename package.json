@@ -12,7 +12,7 @@
     "cron-parser": "^4.9.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "typescript": "^5.7.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0"
