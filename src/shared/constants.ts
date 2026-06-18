@@ -5,3 +5,7 @@ export const SETTINGS_ID = 'cron-settings';
 export const DEFAULT_MAX_HISTORY_RETENTION = 100;
 export const DEFAULT_COMMAND_TIMEOUT_MS = 60_000;
 export const DEFAULT_AI_ENABLE_TOOLS = true;
+export const DEFAULT_REQUIRE_AGENT_APPROVAL = false;
+export const DEFAULT_BLOCK_PRIVATE_HTTP_TARGETS = false;
+
+export const MAX_TIMER_MS = 86_400_000;

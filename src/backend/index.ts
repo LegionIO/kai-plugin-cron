@@ -1,5 +1,5 @@
 import { CronStorage } from './storage.js';
-import { CronScheduler } from './scheduler.js';
+import { CronScheduler, isValidCronExpression } from './scheduler.js';
 import { CronExecutor } from './executor.js';
 import { buildCronTools } from './tools.js';
 import { PANEL_ID, NAV_ID, SETTINGS_ID } from '../shared/constants.js';
@@ -40,6 +40,17 @@ async function handlePanelAction(api: PluginAPI, action: string, data?: unknown)
 
   switch (action) {
     case 'create-job': {
+      if (!isValidCronExpression(payload.schedule as string)) {
+        api.log.warn(`Cron: rejecting invalid schedule "${payload.schedule}"`);
+        api.notifications.show({
+          id: 'cron-invalid-schedule',
+          title: 'Cron: invalid schedule',
+          body: `"${payload.schedule}" is not a valid 5-field cron expression.`,
+          level: 'error',
+          autoDismissMs: 6000,
+        });
+        return;
+      }
       const now = new Date().toISOString();
       const job: CronJob = {
         id: crypto.randomUUID(),
@@ -50,6 +61,8 @@ async function handlePanelAction(api: PluginAPI, action: string, data?: unknown)
         type: payload.type as 'command' | 'ai',
         command: payload.command as CronJob['command'],
         ai: payload.ai as CronJob['ai'],
+        createdVia: 'ui',
+        pendingApproval: false,
         createdAt: now,
         updatedAt: now,
       };
@@ -62,15 +75,41 @@ async function handlePanelAction(api: PluginAPI, action: string, data?: unknown)
     case 'update-job': {
       const existing = storage.getJob(payload.id as string);
       if (!existing) return;
+      if (payload.schedule != null && !isValidCronExpression(payload.schedule as string)) {
+        api.log.warn(`Cron: rejecting invalid schedule "${payload.schedule}"`);
+        api.notifications.show({
+          id: 'cron-invalid-schedule',
+          title: 'Cron: invalid schedule',
+          body: `"${payload.schedule}" is not a valid 5-field cron expression.`,
+          level: 'error',
+          autoDismissMs: 6000,
+        });
+        return;
+      }
       const updated: CronJob = {
         ...existing,
         ...Object.fromEntries(
           Object.entries(payload).filter(([k]) => k !== 'id'),
         ),
+        pendingApproval: false,
+        enabledOnApproval: undefined,
         updatedAt: new Date().toISOString(),
       } as CronJob;
       storage.saveJob(updated);
       scheduler.reschedule(updated);
+      publishState(api);
+      break;
+    }
+
+    case 'approve-job': {
+      const job = storage.getJob(payload.id as string);
+      if (!job || !job.pendingApproval) return;
+      job.pendingApproval = false;
+      job.enabled = job.enabledOnApproval ?? true;
+      delete job.enabledOnApproval;
+      job.updatedAt = new Date().toISOString();
+      storage.saveJob(job);
+      scheduler.reschedule(job);
       publishState(api);
       break;
     }
@@ -87,6 +126,10 @@ async function handlePanelAction(api: PluginAPI, action: string, data?: unknown)
     case 'toggle-job': {
       const job = storage.getJob(payload.id as string);
       if (!job) return;
+      if (job.pendingApproval && !job.enabled) {
+        api.log.warn(`Cron: refusing to enable pending job "${job.name}"; approve it first`);
+        return;
+      }
       job.enabled = !job.enabled;
       job.updatedAt = new Date().toISOString();
       storage.saveJob(job);
@@ -98,6 +141,10 @@ async function handlePanelAction(api: PluginAPI, action: string, data?: unknown)
     case 'run-now': {
       const job = storage.getJob(payload.id as string);
       if (!job) return;
+      if (job.pendingApproval) {
+        api.log.warn(`Cron: refusing to run pending job "${job.name}"; approve it first`);
+        return;
+      }
       publishState(api);
       const run = await executor.execute(job, 'manual');
       publishState(api);
@@ -244,8 +291,9 @@ export async function activate(api: PluginAPI): Promise<void> {
   const missedRuns = scheduler.detectMissedRuns(jobs);
   if (missedRuns.length > 0) {
     api.log.info(`Detected ${missedRuns.length} missed cron run(s)`);
-    for (const run of missedRuns) {
-      storage.addRun(run);
+    storage.addRuns(missedRuns);
+    for (const jobId of new Set(missedRuns.map((r) => r.jobId))) {
+      storage.pruneHistory(jobId);
     }
     api.notifications.show({
       id: 'cron-missed-runs',

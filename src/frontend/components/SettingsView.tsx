@@ -68,6 +68,43 @@ export function SettingsView({ onAction, pluginConfig, pluginState }: PluginComp
         </div>
       </fieldset>
 
+      {/* Security */}
+      <fieldset className="space-y-3 rounded-lg border border-border/50 p-3">
+        <legend className="px-1 text-[10px] font-medium text-muted-foreground">Security</legend>
+
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Boolean(localDefaults.requireAgentApproval)}
+            onChange={(e: any) => updateDefault('requireAgentApproval', e.target.checked)}
+            className="mt-0.5"
+          />
+          <div className="flex-1">
+            <div className="text-sm font-medium">Require approval for AI-created jobs</div>
+            <p className="text-xs text-muted-foreground">
+              Jobs created or modified by the AI agent are saved disabled and must be approved in the Cron panel before
+              they will run. Recommended if the assistant processes untrusted content (web pages, emails, documents).
+            </p>
+          </div>
+        </label>
+
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Boolean(localDefaults.blockPrivateHttpTargets)}
+            onChange={(e: any) => updateDefault('blockPrivateHttpTargets', e.target.checked)}
+            className="mt-0.5"
+          />
+          <div className="flex-1">
+            <div className="text-sm font-medium">Block HTTP requests to private addresses</div>
+            <p className="text-xs text-muted-foreground">
+              HTTP cron jobs will refuse to connect to loopback, link-local, or private-network (RFC1918) addresses.
+              Disable if you need scheduled requests to localhost or LAN services.
+            </p>
+          </div>
+        </label>
+      </fieldset>
+
       {/* Default timeouts */}
       <fieldset className="space-y-3 rounded-lg border border-border/50 p-3">
         <legend className="px-1 text-[10px] font-medium text-muted-foreground">Defaults</legend>

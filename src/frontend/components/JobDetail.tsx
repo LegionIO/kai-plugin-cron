@@ -13,15 +13,48 @@ type JobDetailProps = {
   onToggle: () => void;
   onDelete: () => void;
   onClearHistory: () => void;
+  onApprove: () => void;
 };
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString();
 }
 
-export function JobDetail({ job, runs, nextRun, isRunning, onEdit, onRunNow, onStop, onToggle, onDelete, onClearHistory }: JobDetailProps) {
+export function JobDetail({ job, runs, nextRun, isRunning, onEdit, onRunNow, onStop, onToggle, onDelete, onClearHistory, onApprove }: JobDetailProps) {
   return (
     <div className="p-4 space-y-6">
+      {job.pendingApproval ? (
+        <div
+          className="rounded-xl border p-3 text-sm space-y-2"
+          style={{ borderColor: 'rgba(245,158,11,0.4)', backgroundColor: 'rgba(245,158,11,0.08)' }}
+        >
+          <div className="font-medium" style={{ color: 'rgb(245,158,11)' }}>
+            Awaiting approval
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This job was {job.createdVia === 'agent' ? 'created or modified by the AI agent' : 'flagged for review'}.
+            Review the configuration below, then approve to enable it.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onApprove}
+              className="rounded-lg px-3 py-1 text-xs font-medium"
+              style={{ backgroundColor: 'rgb(245,158,11)', color: '#1a1a1a' }}
+            >
+              Approve
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-lg px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              Reject (delete)
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Summary card */}
       <div className="rounded-xl border border-border/50 p-4 space-y-3">
         <div className="flex items-center justify-between">
@@ -62,7 +95,7 @@ export function JobDetail({ job, runs, nextRun, isRunning, onEdit, onRunNow, onS
               >
                 Stop
               </button>
-            ) : (
+            ) : job.pendingApproval ? null : (
               <button
                 type="button"
                 onClick={onRunNow}
@@ -71,13 +104,15 @@ export function JobDetail({ job, runs, nextRun, isRunning, onEdit, onRunNow, onS
                 Run Now
               </button>
             )}
-            <button
-              type="button"
-              onClick={onToggle}
-              className="rounded-lg px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
-            >
-              {job.enabled ? 'Disable' : 'Enable'}
-            </button>
+            {job.pendingApproval ? null : (
+              <button
+                type="button"
+                onClick={onToggle}
+                className="rounded-lg px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+              >
+                {job.enabled ? 'Disable' : 'Enable'}
+              </button>
+            )}
             <button
               type="button"
               onClick={onDelete}

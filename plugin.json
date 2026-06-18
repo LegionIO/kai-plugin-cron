@@ -48,6 +48,16 @@
           "commandTimeoutMs": {
             "type": "number",
             "default": 60000
+          },
+          "requireAgentApproval": {
+            "type": "boolean",
+            "default": false,
+            "description": "When enabled, cron jobs created or modified by the AI agent are saved disabled and must be approved in the Cron panel before they will run."
+          },
+          "blockPrivateHttpTargets": {
+            "type": "boolean",
+            "default": false,
+            "description": "When enabled, HTTP cron jobs will refuse to connect to loopback, link-local, or private (RFC1918) addresses."
           }
         }
       }

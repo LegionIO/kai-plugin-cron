@@ -87,11 +87,18 @@ export class CronStorage {
   }
 
   addRun(record: CronRunRecord): void {
+    this.addRuns([record]);
+  }
+
+  addRuns(records: CronRunRecord[]): void {
+    if (records.length === 0) return;
     const history = this.readHistory();
-    if (!history.runs[record.jobId]) {
-      history.runs[record.jobId] = [];
+    for (const record of records) {
+      if (!history.runs[record.jobId]) {
+        history.runs[record.jobId] = [];
+      }
+      history.runs[record.jobId].push(record);
     }
-    history.runs[record.jobId].push(record);
     this.writeHistory(history);
   }
 
@@ -126,8 +133,8 @@ export class CronStorage {
 
   getLastRunAt(jobId: string): string | null {
     const runs = this.getHistory(jobId);
-    const completedRuns = runs.filter((r) => r.status === 'completed' || r.status === 'failed');
-    if (completedRuns.length === 0) return null;
-    return completedRuns[0].startedAt;
+    const finishedRuns = runs.filter((r) => r.status !== 'running');
+    if (finishedRuns.length === 0) return null;
+    return finishedRuns[0].startedAt;
   }
 }

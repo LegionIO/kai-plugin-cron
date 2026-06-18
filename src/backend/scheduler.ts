@@ -2,6 +2,7 @@ import * as cronParser from 'cron-parser';
 const { parseExpression } = cronParser;
 import type { CronJob, CronRunRecord } from '../shared/types.js';
 import type { CronStorage } from './storage.js';
+import { MAX_TIMER_MS, DEFAULT_MAX_HISTORY_RETENTION } from '../shared/constants.js';
 
 type SchedulerCallbacks = {
   onJobDue: (job: CronJob) => void;
@@ -25,7 +26,7 @@ export class CronScheduler {
 
   start(jobs: CronJob[]): void {
     for (const job of jobs) {
-      if (job.enabled) {
+      if (job.enabled && !job.pendingApproval) {
         this.scheduleNext(job);
       }
     }
@@ -41,7 +42,7 @@ export class CronScheduler {
 
   reschedule(job: CronJob): void {
     this.remove(job.id);
-    if (job.enabled) {
+    if (job.enabled && !job.pendingApproval) {
       this.scheduleNext(job);
     }
   }
@@ -71,6 +72,7 @@ export class CronScheduler {
   detectMissedRuns(jobs: CronJob[]): CronRunRecord[] {
     const missed: CronRunRecord[] = [];
     const now = new Date();
+    const cap = this.storage.getDefaults().maxHistoryRetention ?? DEFAULT_MAX_HISTORY_RETENTION;
 
     for (const job of jobs) {
       if (!job.enabled) continue;
@@ -85,11 +87,17 @@ export class CronScheduler {
           tz: job.timezone,
         });
 
+        const jobMissed: CronRunRecord[] = [];
+        let capped = false;
         while (true) {
           const next = interval.next();
           if (next.toDate().getTime() >= now.getTime()) break;
+          if (jobMissed.length >= cap) {
+            capped = true;
+            break;
+          }
 
-          missed.push({
+          jobMissed.push({
             id: `skip-${job.id}-${next.toDate().getTime()}`,
             jobId: job.id,
             jobName: job.name,
@@ -100,6 +108,15 @@ export class CronScheduler {
             skippedReason: 'App was not running',
           });
         }
+
+        if (capped && jobMissed.length > 0) {
+          const last = jobMissed[jobMissed.length - 1];
+          last.id = `skip-${job.id}-${now.getTime()}`;
+          last.startedAt = now.toISOString();
+          last.skippedReason = `${cap}+ runs skipped while app was closed`;
+        }
+
+        missed.push(...jobMissed);
       } catch (err) {
         this.callbacks.log.warn(`Failed to detect missed runs for job "${job.name}":`, err);
       }
@@ -108,29 +125,45 @@ export class CronScheduler {
     return missed;
   }
 
-  private scheduleNext(job: CronJob): void {
+  private scheduleNext(job: CronJob, target?: Date): void {
     try {
-      const interval = parseExpression(job.schedule, {
-        currentDate: new Date(),
-        tz: job.timezone,
-      });
-      const next = interval.next().toDate();
+      let next: Date;
+      if (target) {
+        next = target;
+      } else {
+        const interval = parseExpression(job.schedule, {
+          currentDate: new Date(),
+          tz: job.timezone,
+        });
+        next = interval.next().toDate();
+      }
       const delay = next.getTime() - Date.now();
 
       this.nextRuns.set(job.id, next);
 
       const timer = setTimeout(() => {
         this.timers.delete(job.id);
-        this.nextRuns.delete(job.id);
-        this.callbacks.onJobDue(job);
+
         const currentJob = this.storage.getJob(job.id);
-        if (currentJob?.enabled) {
-          this.scheduleNext(currentJob);
+        if (!currentJob?.enabled || currentJob.pendingApproval) {
+          this.nextRuns.delete(job.id);
+          return;
         }
-      }, Math.max(delay, 0));
+
+        if (Date.now() < next.getTime()) {
+          this.scheduleNext(currentJob, next);
+          return;
+        }
+
+        this.nextRuns.delete(job.id);
+        this.callbacks.onJobDue(currentJob);
+        this.scheduleNext(currentJob);
+      }, Math.min(Math.max(delay, 0), MAX_TIMER_MS));
 
       this.timers.set(job.id, timer);
-      this.callbacks.log.info(`Scheduled "${job.name}" for ${next.toISOString()} (in ${Math.round(delay / 1000)}s)`);
+      if (!target) {
+        this.callbacks.log.info(`Scheduled "${job.name}" for ${next.toISOString()} (in ${Math.round(delay / 1000)}s)`);
+      }
     } catch (err) {
       this.callbacks.log.error(`Failed to schedule job "${job.name}":`, err);
     }
@@ -149,9 +182,15 @@ export function getNextCronDate(schedule: string, timezone?: string): Date | nul
   }
 }
 
-export function isValidCronExpression(schedule: string): boolean {
+export function isValidCronExpression(schedule: unknown): boolean {
+  if (typeof schedule !== 'string') return false;
+  const trimmed = schedule.trim();
+  if (trimmed.length === 0) return false;
+  if (!trimmed.startsWith('@') && trimmed.split(/\s+/).length !== 5) {
+    return false;
+  }
   try {
-    parseExpression(schedule);
+    parseExpression(trimmed);
     return true;
   } catch {
     return false;

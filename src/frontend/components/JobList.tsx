@@ -12,6 +12,7 @@ type JobListProps = {
   onStop: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
+  onApprove: (id: string) => void;
 };
 
 function getLastStatus(recentRuns: any[], jobId: string): string | null {
@@ -59,7 +60,7 @@ function relativeTime(isoDate: string): string {
   return diff > 0 ? `in ${days}d` : `${days}d ago`;
 }
 
-export function JobList({ jobs, nextRuns, runningJobs, recentRuns, onSelect, onToggle, onRunNow, onStop, onDelete, onEdit }: JobListProps) {
+export function JobList({ jobs, nextRuns, runningJobs, recentRuns, onSelect, onToggle, onRunNow, onStop, onDelete, onEdit, onApprove }: JobListProps) {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   if (jobs.length === 0) {
@@ -101,6 +102,15 @@ export function JobList({ jobs, nextRuns, runningJobs, recentRuns, onSelect, onT
                 >
                   {job.type === 'ai' ? 'AI' : 'CMD'}
                 </span>
+                {job.pendingApproval ? (
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                    style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: 'rgb(245,158,11)' }}
+                    title="Created or modified by the AI agent — review before approving"
+                  >
+                    PENDING
+                  </span>
+                ) : null}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {cronToHuman(job.schedule)}
@@ -115,19 +125,31 @@ export function JobList({ jobs, nextRuns, runningJobs, recentRuns, onSelect, onT
               className="flex items-center gap-1"
               onClick={(e: any) => e.stopPropagation()}
             >
-              {/* Enable/disable toggle */}
-              <button
-                type="button"
-                onClick={() => onToggle(job.id)}
-                title={job.enabled ? 'Disable' : 'Enable'}
-                className={`rounded-lg px-2 py-1 text-xs transition-colors ${
-                  job.enabled
-                    ? 'text-green-500 hover:bg-green-500/10'
-                    : 'text-muted-foreground/50 hover:bg-muted/50'
-                }`}
-              >
-                {job.enabled ? 'ON' : 'OFF'}
-              </button>
+              {/* Approve / Enable-disable toggle */}
+              {job.pendingApproval ? (
+                <button
+                  type="button"
+                  onClick={() => onApprove(job.id)}
+                  title="Approve and enable this AI-created job"
+                  className="rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+                  style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: 'rgb(245,158,11)' }}
+                >
+                  Approve
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onToggle(job.id)}
+                  title={job.enabled ? 'Disable' : 'Enable'}
+                  className={`rounded-lg px-2 py-1 text-xs transition-colors ${
+                    job.enabled
+                      ? 'text-green-500 hover:bg-green-500/10'
+                      : 'text-muted-foreground/50 hover:bg-muted/50'
+                  }`}
+                >
+                  {job.enabled ? 'ON' : 'OFF'}
+                </button>
+              )}
 
               {/* Run Now / Stop */}
               {isRunning ? (
@@ -139,7 +161,7 @@ export function JobList({ jobs, nextRuns, runningJobs, recentRuns, onSelect, onT
                 >
                   ■
                 </button>
-              ) : (
+              ) : job.pendingApproval ? null : (
                 <button
                   type="button"
                   onClick={() => onRunNow(job.id)}

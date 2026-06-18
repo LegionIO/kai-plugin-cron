@@ -40,6 +40,9 @@ export type CronJob = {
   type: CronJobType;
   command?: CommandConfig;
   ai?: AIConfig;
+  createdVia?: 'ui' | 'agent';
+  pendingApproval?: boolean;
+  enabledOnApproval?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -92,6 +95,8 @@ export type CronDefaults = {
   reasoningEffort?: string;
   maxHistoryRetention?: number;
   commandTimeoutMs?: number;
+  requireAgentApproval?: boolean;
+  blockPrivateHttpTargets?: boolean;
 };
 
 export type CronPluginConfig = {

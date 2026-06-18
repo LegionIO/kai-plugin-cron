@@ -4,7 +4,22 @@ import { JobList } from './JobList';
 import { JobForm } from './JobForm';
 import { JobDetail } from './JobDetail';
 
+import * as cronParser from 'cron-parser';
+
 type View = { type: 'list' } | { type: 'create' } | { type: 'edit'; jobId: string } | { type: 'detail'; jobId: string };
+
+function isValidScheduleClientSide(schedule: unknown): boolean {
+  if (typeof schedule !== 'string') return false;
+  const trimmed = schedule.trim();
+  if (trimmed.length === 0) return false;
+  if (!trimmed.startsWith('@') && trimmed.split(/\s+/).length !== 5) return false;
+  try {
+    cronParser.parseExpression(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function PanelView({ onAction, pluginState }: PluginComponentProps) {
   const state = (pluginState ?? {}) as any;
@@ -15,6 +30,7 @@ export function PanelView({ onAction, pluginState }: PluginComponentProps) {
   const defaults = (state.defaults ?? {}) as any;
 
   const [view, setView] = useState<View>({ type: 'list' });
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleSelectJob = useCallback((jobId: string) => {
     setView({ type: 'detail', jobId });
@@ -33,6 +49,11 @@ export function PanelView({ onAction, pluginState }: PluginComponentProps) {
   }, []);
 
   const handleSaveJob = useCallback((data: Record<string, unknown>) => {
+    if (!isValidScheduleClientSide(data.schedule)) {
+      setFormError(`"${data.schedule}" is not a valid 5-field cron expression (or @-alias).`);
+      return;
+    }
+    setFormError(null);
     if (view.type === 'create') {
       onAction('create-job', data);
     } else if (view.type === 'edit') {
@@ -95,14 +116,22 @@ export function PanelView({ onAction, pluginState }: PluginComponentProps) {
             onStop={(id: string) => onAction('stop-job', { id })}
             onDelete={(id: string) => onAction('delete-job', { id })}
             onEdit={handleEdit}
+            onApprove={(id: string) => onAction('approve-job', { id })}
           />
         ) : view.type === 'create' || view.type === 'edit' ? (
-          <JobForm
-            job={view.type === 'edit' ? selectedJob : null}
-            defaults={defaults}
-            onSave={handleSaveJob}
-            onCancel={handleBack}
-          />
+          <>
+            {formError ? (
+              <div className="mx-4 mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                {formError}
+              </div>
+            ) : null}
+            <JobForm
+              job={view.type === 'edit' ? selectedJob : null}
+              defaults={defaults}
+              onSave={handleSaveJob}
+              onCancel={() => { setFormError(null); handleBack(); }}
+            />
+          </>
         ) : view.type === 'detail' && selectedJob ? (
           <JobDetail
             job={selectedJob}
@@ -115,6 +144,7 @@ export function PanelView({ onAction, pluginState }: PluginComponentProps) {
             onToggle={() => onAction('toggle-job', { id: selectedJob.id })}
             onDelete={() => { onAction('delete-job', { id: selectedJob.id }); handleBack(); }}
             onClearHistory={() => onAction('clear-history', { jobId: selectedJob.id })}
+            onApprove={() => onAction('approve-job', { id: selectedJob.id })}
           />
         ) : null}
       </div>

@@ -3,6 +3,7 @@ import type { CronStorage } from './storage.js';
 import type { CronScheduler } from './scheduler.js';
 import type { CronExecutor } from './executor.js';
 import { isValidCronExpression } from './scheduler.js';
+import { DEFAULT_REQUIRE_AGENT_APPROVAL } from '../shared/constants.js';
 
 type Deps = {
   storage: CronStorage;
@@ -14,6 +15,20 @@ type Deps = {
 
 export function buildCronTools(deps: Deps) {
   const { storage, scheduler, executor, api, publishState } = deps;
+
+  const requiresApproval = (): boolean =>
+    storage.getDefaults().requireAgentApproval ?? DEFAULT_REQUIRE_AGENT_APPROVAL;
+
+  const notifyPending = (job: CronJob, verb: 'created' | 'modified'): void => {
+    api.notifications.show({
+      id: `cron-pending-${job.id}`,
+      title: `Cron: "${job.name}" awaiting approval`,
+      body: `An AI-${verb} job is pending your approval in the Cron panel before it will run.`,
+      level: 'warning',
+      native: true,
+      autoDismissMs: 15000,
+    });
+  };
 
   const z = {
     object: (shape: Record<string, unknown>) => ({ _shape: shape, _type: 'object' }),
@@ -81,16 +96,20 @@ export function buildCronTools(deps: Deps) {
           return { error: `Invalid cron expression: "${data.schedule}"` };
         }
 
+        const gated = requiresApproval();
         const now = new Date().toISOString();
         const job: CronJob = {
           id: crypto.randomUUID(),
           name: data.name as string,
           schedule: data.schedule as string,
           timezone: data.timezone as string | undefined,
-          enabled: data.enabled !== false,
+          enabled: gated ? false : data.enabled !== false,
           type: data.type as 'command' | 'ai',
           command: data.command as CronJob['command'],
           ai: data.ai as CronJob['ai'],
+          createdVia: 'agent',
+          pendingApproval: gated,
+          ...(gated && { enabledOnApproval: data.enabled !== false }),
           createdAt: now,
           updatedAt: now,
         };
@@ -98,6 +117,16 @@ export function buildCronTools(deps: Deps) {
         storage.saveJob(job);
         scheduler.reschedule(job);
         publishState();
+
+        if (gated) {
+          notifyPending(job, 'created');
+          return {
+            success: true,
+            pendingApproval: true,
+            message: 'Job saved but requires user approval in the Cron panel before it will run. The user has been notified.',
+            job: { id: job.id, name: job.name, schedule: job.schedule, type: job.type, enabled: job.enabled },
+          };
+        }
 
         return {
           success: true,
@@ -179,9 +208,14 @@ export function buildCronTools(deps: Deps) {
         const job = storage.getJob(data.id as string);
         if (!job) return { error: `Job not found: ${data.id}` };
 
-        if (data.schedule && !isValidCronExpression(data.schedule as string)) {
+        if (data.schedule != null && !isValidCronExpression(data.schedule as string)) {
           return { error: `Invalid cron expression: "${data.schedule}"` };
         }
+
+        const gated = requiresApproval();
+        const intendedEnabled = data.enabled != null
+          ? Boolean(data.enabled)
+          : (job.pendingApproval ? (job.enabledOnApproval ?? job.enabled) : job.enabled);
 
         const updated: CronJob = {
           ...job,
@@ -191,12 +225,23 @@ export function buildCronTools(deps: Deps) {
           ...(data.timezone !== undefined && { timezone: data.timezone as string }),
           ...(data.command != null && { command: data.command as CronJob['command'] }),
           ...(data.ai != null && { ai: data.ai as CronJob['ai'] }),
+          ...(gated && { enabled: false, pendingApproval: true, enabledOnApproval: intendedEnabled }),
           updatedAt: new Date().toISOString(),
         };
 
         storage.saveJob(updated);
         scheduler.reschedule(updated);
         publishState();
+
+        if (gated) {
+          notifyPending(updated, 'modified');
+          return {
+            success: true,
+            pendingApproval: true,
+            message: 'Job updated but requires user approval in the Cron panel before it will run. The user has been notified.',
+            job: { id: updated.id, name: updated.name, schedule: updated.schedule, enabled: updated.enabled },
+          };
+        }
 
         return {
           success: true,
@@ -220,6 +265,9 @@ export function buildCronTools(deps: Deps) {
         const data = input as Record<string, unknown>;
         const job = storage.getJob(data.id as string);
         if (!job) return { error: `Job not found: ${data.id}` };
+        if (requiresApproval()) {
+          return { error: `requireAgentApproval is enabled; job deletion must be performed by the user in the Cron panel.` };
+        }
 
         executor.kill(job.id);
         scheduler.remove(job.id);
@@ -282,6 +330,9 @@ export function buildCronTools(deps: Deps) {
         const data = input as Record<string, unknown>;
         const job = storage.getJob(data.id as string);
         if (!job) return { error: `Job not found: ${data.id}` };
+        if (job.pendingApproval) {
+          return { error: `Job "${job.name}" is pending user approval and cannot be run until approved in the Cron panel.` };
+        }
 
         const run = await executor.execute(job, 'manual');
         publishState();
