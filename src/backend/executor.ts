@@ -131,7 +131,11 @@ export class CronExecutor {
     return true;
   }
 
-  async execute(job: CronJob, triggeredBy: 'schedule' | 'manual'): Promise<CronRunRecord> {
+  async execute(
+    job: CronJob,
+    triggeredBy: 'schedule' | 'manual',
+    opts: { onStarted?: (run: CronRunRecord) => void } = {},
+  ): Promise<CronRunRecord> {
     if (this.runningJobs.has(job.id)) {
       const skipped: CronRunRecord = {
         id: `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -160,6 +164,12 @@ export class CronExecutor {
 
     const abortController = new AbortController();
     this.runningJobs.set(job.id, { abortController });
+
+    try {
+      opts.onStarted?.(run);
+    } catch (err) {
+      this.api.log.warn('onStarted hook threw:', err);
+    }
 
     try {
       if (job.type === 'command') {
@@ -191,6 +201,11 @@ export class CronExecutor {
   private async executeCommand(job: CronJob, run: CronRunRecord, signal: AbortSignal): Promise<void> {
     const cmd = job.command;
     if (!cmd) throw new Error('No command configuration');
+
+    // A run.started bus listener may have called stop-job before the child
+    // process was spawned; honour the abort here rather than launching and
+    // then racing SIGTERM against the command's initial side effects.
+    if (signal.aborted) throw new Error('Killed by user');
 
     const defaults = this.storage.getDefaults();
     const timeout = (cmd.type === 'shell' ? cmd.shell?.timeoutMs : cmd.http?.timeoutMs)

@@ -115,6 +115,19 @@ export type CronPluginState = {
 export type PluginAPI = {
   pluginName: string;
   pluginDir: string;
+  host?: {
+    apiVersion: () => string;
+    capabilities: () => string[];
+    hasCapability: (cap: string) => boolean;
+  };
+  events?: {
+    declare: (decl: {
+      events?: Array<{ event: string; title: string; description?: string; payloadSchema?: Record<string, unknown> }>;
+      actions?: Array<{ targetId: string; title: string; description?: string; inputSchema?: Record<string, unknown> }>;
+    }) => void;
+    emit: (event: string, payload?: unknown) => void;
+    on: (key: string, handler: (event: unknown) => void) => () => void;
+  };
   config: {
     get: () => Record<string, unknown>;
     set: (path: string, value: unknown) => void;
@@ -138,9 +151,9 @@ export type PluginAPI = {
     unregister: (toolNames: string[]) => void;
   };
   ui: {
-    registerPanel: (descriptor: Record<string, unknown>) => void;
+    registerPanelView: (descriptor: Record<string, unknown>) => void;
     registerNavigationItem: (descriptor: Record<string, unknown>) => void;
-    registerSettingsSection: (descriptor: Record<string, unknown>) => void;
+    registerSettingsView: (descriptor: Record<string, unknown>) => void;
   };
   notifications: {
     show: (descriptor: Record<string, unknown>) => void;
@@ -174,6 +187,6 @@ export type PluginAPI = {
     warn: (...args: unknown[]) => void;
     error: (...args: unknown[]) => void;
   };
-  onAction: (targetId: string, handler: (action: string, data?: unknown) => void | Promise<void>) => void;
+  onAction: (targetId: string, handler: (action: string, data?: unknown) => unknown | Promise<unknown>) => void;
   fetch: typeof globalThis.fetch;
 };

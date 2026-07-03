@@ -12,6 +12,7 @@
     "config:read",
     "config:write",
     "state:publish",
+    "events:publish",
     "tools:register",
     "ui:panel",
     "ui:navigation",

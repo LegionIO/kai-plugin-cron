@@ -60,7 +60,7 @@ export function SettingsView({ onAction, pluginConfig, pluginState }: PluginComp
           <p className="text-xs text-muted-foreground">Number of run records to keep per job before pruning old ones</p>
           <input
             type="number"
-            value={localDefaults.maxHistoryRetention ?? 100}
+            value={(localDefaults.maxHistoryRetention as number | undefined) ?? 100}
             onChange={(e: any) => updateDefault('maxHistoryRetention', parseInt(e.target.value, 10) || 100)}
             className={inputClass}
             style={{ maxWidth: '120px' }}
@@ -113,7 +113,7 @@ export function SettingsView({ onAction, pluginConfig, pluginState }: PluginComp
           <p className="text-xs text-muted-foreground">Default timeout for shell commands and HTTP requests</p>
           <input
             type="number"
-            value={localDefaults.commandTimeoutMs ?? 60000}
+            value={(localDefaults.commandTimeoutMs as number | undefined) ?? 60000}
             onChange={(e: any) => updateDefault('commandTimeoutMs', parseInt(e.target.value, 10) || 60000)}
             className={inputClass}
             style={{ maxWidth: '120px' }}

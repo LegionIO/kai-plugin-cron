@@ -1,4 +1,4 @@
-import type { CronJob, CronDefaults, PluginAPI } from '../shared/types.js';
+import type { CronJob, CronDefaults, CronRunRecord, PluginAPI } from '../shared/types.js';
 import type { CronStorage } from './storage.js';
 import type { CronScheduler } from './scheduler.js';
 import type { CronExecutor } from './executor.js';
@@ -11,10 +11,11 @@ type Deps = {
   executor: CronExecutor;
   api: PluginAPI;
   publishState: () => void;
+  runJob: (job: CronJob, triggeredBy: 'schedule' | 'manual') => Promise<CronRunRecord>;
 };
 
 export function buildCronTools(deps: Deps) {
-  const { storage, scheduler, executor, api, publishState } = deps;
+  const { storage, scheduler, executor, api, publishState, runJob } = deps;
 
   const requiresApproval = (): boolean =>
     storage.getDefaults().requireAgentApproval ?? DEFAULT_REQUIRE_AGENT_APPROVAL;
@@ -334,8 +335,7 @@ export function buildCronTools(deps: Deps) {
           return { error: `Job "${job.name}" is pending user approval and cannot be run until approved in the Cron panel.` };
         }
 
-        const run = await executor.execute(job, 'manual');
-        publishState();
+        const run = await runJob(job, 'manual');
 
         return {
           runId: run.id,

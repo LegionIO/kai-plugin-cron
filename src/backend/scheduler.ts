@@ -157,9 +157,20 @@ export class CronScheduler {
 
         this.nextRuns.delete(job.id);
         this.callbacks.onJobDue(currentJob);
-        this.scheduleNext(currentJob);
+
+        // A job.due bus listener may have update/toggle/delete/reschedule'd this
+        // job before onJobDue's sync prefix returned. If a timer already exists
+        // that reschedule wins; otherwise re-read storage so we schedule from the
+        // current definition rather than the pre-emit snapshot.
+        if (this.timers.has(job.id)) return;
+        const afterJob = this.storage.getJob(job.id);
+        if (afterJob?.enabled && !afterJob.pendingApproval) {
+          this.scheduleNext(afterJob);
+        }
       }, Math.min(Math.max(delay, 0), MAX_TIMER_MS));
 
+      const prev = this.timers.get(job.id);
+      if (prev) clearTimeout(prev);
       this.timers.set(job.id, timer);
       if (!target) {
         this.callbacks.log.info(`Scheduled "${job.name}" for ${next.toISOString()} (in ${Math.round(delay / 1000)}s)`);
